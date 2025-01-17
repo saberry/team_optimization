@@ -8,7 +8,7 @@ library(ROI.plugin.symphony)
 library(ompr)
 library(dplyr)
 
-mba_data <- read.csv("C:/Users/sberry5/Downloads/MBA Spring 2025 Grow Irish Full Report - Original Data.csv")
+mba_data <- read.csv("MBA Spring 2025 Grow Irish Full Report - Original Data.csv")
 # mba_data_ty <- read.csv("~/Downloads/MBA Placement Master - Fall Grow Irish Week (2023) - For Seth Qualtrics results (TY25+MSA).csv")
 
 #row_descriptions <- mba_data[1, ]
