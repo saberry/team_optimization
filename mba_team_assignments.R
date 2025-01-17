@@ -8,16 +8,16 @@ library(ROI.plugin.symphony)
 library(ompr)
 library(dplyr)
 
-mba_data <- read.csv("~/Downloads/MBA Fall 2024 Grow Irish Course Preferences (Master) - August 26, 2_30 PM - Data.csv")
+mba_data <- read.csv("C:/Users/sberry5/Downloads/MBA Spring 2025 Grow Irish Full Report - Original Data.csv")
 # mba_data_ty <- read.csv("~/Downloads/MBA Placement Master - Fall Grow Irish Week (2023) - For Seth Qualtrics results (TY25+MSA).csv")
 
-row_descriptions <- mba_data[1, ]
+#row_descriptions <- mba_data[1, ]
 
-mba_data <- mba_data[-1, ]
+#mba_data <- mba_data[-1, ]
 
-colnames(mba_data) <- row_descriptions
+#colnames(mba_data) <- row_descriptions
 
-mba_data <- mba_data[mba_data$`Skill Building or Consulting?` == "MBA Consulting Project", ]
+mba_data <- mba_data[mba_data$After.considering.my.personal.or.professional.commitments.during.Spring..especially.March.3.7th..and.in.light.of.my.career.goals..my.preference.for.Spring.Grow.Irish.is. == "Consulting Project", ]
 
 # mba_data_ty <- mba_data_ty[-1, ]
 
@@ -27,10 +27,10 @@ mba_data$Email <- mba_data$Recipient.Email
 
 mba_data$Email <- dplyr::coalesce(
   mba_data$RecipientEmail,
-  mba_data$`Your ND Email address:`
+  mba_data$Your.Information....Your.ND.Email.address.
 )
 
-first_tier_ratings <- mba_data$`CP: First Tier`
+first_tier_ratings <- mba_data$MBA.Consulting.Project.Preferences..First.Tier...Indicate.5.projects.in.your.1st.TIER..You.must.select.exactly.5..Selections.are.not.ranked.within.each.tier.
 
 first_tier_split <- strsplit(first_tier_ratings, split = ",")
 
@@ -43,7 +43,7 @@ first_tier_out <- lapply(1:length(first_tier_split), function(x) {
 
 first_tier_out <- do.call(rbind, first_tier_out)
 
-second_tier_ratings <- mba_data$`CP: Second Tier`
+second_tier_ratings <- mba_data$MBA.Consulting.Project.Preferences..Second.Tier....Indicate.5.projects.in.your.2nd.TIER..You.must.select.exactly.5..Selections.are.not.ranked.within.each.tier.
 
 second_tier_split <- strsplit(second_tier_ratings, split = ",")
 
@@ -56,23 +56,23 @@ second_tier_out <- lapply(1:length(second_tier_split), function(x) {
 
 second_tier_out <- do.call(rbind, second_tier_out)
 
-# third_tier_ratings <- mba_data$Third.Tier......Indicate.6.projects.in.your.3rd.TIER..You.must.select.exactly.6..Selections.are.not.ranked.within.each.tier.
-# 
-# third_tier_split <- strsplit(third_tier_ratings, split = ",")
-# 
-# third_tier_out <- lapply(1:length(third_tier_split), function(x) {
-#   tmp_df <- data.frame(org = third_tier_split[[x]])
-#   tmp_df$value <- 3
-#   tmp_df$id <- x
-#   tmp_df
-# })
-# 
-# third_tier_out <- do.call(rbind, third_tier_out)
+third_tier_ratings <- mba_data$MBA.Consulting.Project.Preferences..Third.Tier....Indicate.5.projects.in.your.3rd.TIER..You.must.select.exactly.5..Selections.are.not.ranked.within.each.tier.
+ 
+third_tier_split <- strsplit(third_tier_ratings, split = ",")
+ 
+third_tier_out <- lapply(1:length(third_tier_split), function(x) {
+  tmp_df <- data.frame(org = third_tier_split[[x]])
+  tmp_df$value <- 3
+  tmp_df$id <- x
+  tmp_df
+})
+ 
+third_tier_out <- do.call(rbind, third_tier_out)
 
 all_rankings <- rbind(
   first_tier_out, 
-  second_tier_out 
-  # third_tier_out
+  second_tier_out,
+  third_tier_out
   )
 
 all_rankings <- tidyr::pivot_wider(all_rankings, 
@@ -83,22 +83,22 @@ all_rankings <- tidyr::pivot_wider(all_rankings,
 
 all_rankings_matrix <- as.matrix(all_rankings[,-1])
 
-all_rankings_matrix <- all_rankings_matrix[, 
-                                           !colnames(all_rankings_matrix) %in% c("American Heart Association", "Bruisers Auto Care", "A Rosie Place")]
+#all_rankings_matrix <- all_rankings_matrix[, 
+ #                                          !colnames(all_rankings_matrix) %in% c("American Heart Association", "Bruisers Auto Care", "A Rosie Place")]
 
 n_students <- nrow(all_rankings_matrix)
 n_teams <- ncol(all_rankings_matrix)
+#7 9 21 are 0
+#23 29 are 5
+org_capacity <- c(
+  rep(4, 6), 
+  0, 4, 0, 
+  rep(4, 11), 
+  0, 4,  5, 
+  rep(4, 5), 
+  5, rep(4, 3)
 
-org_capacity <- c(4,
-                  4,
-                  4,
-                  4,
-                  6,
-                  4,
-                  4,
-                  6,
-                  5,
-                  6)
+)
 
 org_min <- c(rep(0, n_teams-2), 0, 0)
 # org_min[c(18:23, 25:26)] <- 6
@@ -125,13 +125,13 @@ model <- MIPModel() %>%
                  j = 1:n_teams) %>% 
   # Every person needs to be on 1 team:
   add_constraint(sum_over(x[i, j], j = 1:n_teams) == 1, 
-                 i = 1:n_students) %>%
+                 i = 1:n_students) #%>%
   # add_constraint(sum_over(x[i, j] * travel_eligible[i], i = 1:n_student), i = 1:n_students)
   # Need at least 1 woman
-  add_constraint(sum_over(gender[i] * x[i, j], i = 1:n_students) >= gender_needs[j],
-                 j = 1:n_teams) %>%
-  add_constraint(sum_over(driver[i] * x[i, j], i = 1:n_students) >= rep(1, n_teams)[j],
-                 j = 1:n_teams)
+  #add_constraint(sum_over(gender[i] * x[i, j], i = 1:n_students) >= gender_needs[j],
+  #               j = 1:n_teams) %>%
+  #add_constraint(sum_over(driver[i] * x[i, j], i = 1:n_students) >= rep(1, n_teams)[j],
+  #               j = 1:n_teams)
   # # The following will deal with athletes:
   # add_constraint(sum_over(athlete[i] * x[i, j], i = 1:n_students) == athlete_needs[j], 
   #                j = 1:n_teams) %>% 
